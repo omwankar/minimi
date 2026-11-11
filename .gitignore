@@ -1,16 +1,5 @@
 node_modules
 dist
-out
-.next
-.turbo
 .env
-.env.local
-.env*.local
+.data
 *.log
-.DS_Store
-*.tsbuildinfo
-playwright-report
-test-results
-screenshots
-data
-.railway

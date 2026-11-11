@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Minimi</title>
+    <style>
+      :root {
+        --bg: #e6e1d4;
+        --paper: #f7f4ec;
+        --ink: #1c1915;
+        --muted: #6d665c;
+        --line: #ddd4c4;
+        --accent: #0e6b4e;
+        --user: #1c1915;
+        --danger: #8c2f2f;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(900px 420px at 0% -10%, #f4efe3, transparent 60%),
+          var(--bg);
+      }
+      .shell { display: flex; height: 100dvh; }
+      aside {
+        width: 260px;
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 14px 10px;
+        background: #efeae0;
+        border-right: 1px solid var(--line);
+      }
+      #chats { overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+      button.chat {
+        text-align: left;
+        border: 0;
+        background: transparent;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font: inherit;
+        font-size: 13px;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      button.chat strong { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      button.chat small { color: var(--muted); font-size: 11px; }
+      button.chat.active, button.chat:hover { background: #e4efe9; }
+      .app {
+        height: 100dvh;
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 18px 18px 14px;
+      }
+      @media (max-width: 800px) {
+        .shell { flex-direction: column; }
+        aside { width: 100%; max-height: 32vh; border-right: 0; border-bottom: 1px solid var(--line); }
+        .app { height: auto; flex: 1; }
+      }
+      header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand { display: flex; gap: 12px; align-items: center; }
+      .mark {
+        width: 34px; height: 34px; border-radius: 9px;
+        background: var(--accent);
+        clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
+      }
+      h1 { font-size: 20px; font-weight: 650; margin: 0; letter-spacing: -0.03em; }
+      .sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+      button.new {
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button.new:hover { border-color: var(--ink); }
+      #log {
+        flex: 1;
+        overflow-y: auto;
+        padding: 22px 2px 12px;
+      }
+      .empty { color: var(--muted); max-width: 46ch; line-height: 1.5; margin-top: 28px; }
+      .msg { margin: 0 0 18px; max-width: 68ch; }
+      .msg.user { margin-left: auto; max-width: 52ch; }
+      .who { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+      .bubble.user {
+        background: var(--user);
+        color: #f6f3ec;
+        border-radius: 16px 16px 4px 16px;
+        padding: 10px 14px;
+        white-space: pre-wrap;
+        line-height: 1.45;
+      }
+      .bubble.assistant {
+        font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+        font-size: 17.5px;
+        line-height: 1.5;
+      }
+      .bubble.assistant p { margin: 0 0 0.7em; }
+      .bubble.assistant ul { margin: 0 0 0.7em; padding-left: 1.2em; }
+      .bubble.assistant a { color: var(--accent); }
+      .bubble.assistant code {
+        font-family: Consolas, ui-monospace, monospace;
+        font-size: 0.86em;
+        background: #efeae0;
+        padding: 0 4px;
+        border-radius: 4px;
+      }
+      .status { color: var(--muted); font-size: 13px; min-height: 1.2em; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .chip, .src {
+        font-family: "Segoe UI", sans-serif;
+        font-size: 12px;
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .src {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 8px;
+        max-width: 28ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        background: var(--paper);
+      }
+      .src:hover { color: var(--ink); border-color: var(--ink); }
+      .err { color: var(--danger); }
+      form {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 8px 8px 8px 14px;
+      }
+      textarea {
+        flex: 1;
+        resize: none;
+        border: 0;
+        outline: none;
+        background: transparent;
+        font: inherit;
+        font-size: 15px;
+        line-height: 1.4;
+        max-height: 160px;
+        color: var(--ink);
+      }
+      button.send {
+        border: 0;
+        background: var(--accent);
+        color: white;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      button.send:disabled { opacity: 0.45; cursor: default; }
+      .hint { margin: 8px 2px 0; color: var(--muted); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+    <aside>
+      <button class="new" type="button" id="new">New chat</button>
+      <div id="chats"></div>
+    </aside>
+    <div class="app">
+      <header>
+        <div class="brand">
+          <div class="mark" aria-hidden="true"></div>
+          <div>
+            <h1>Minimi</h1>
+            <p class="sub" id="sub">Remembers the day. Checks the web.</p>
+          </div>
+        </div>
+      </header>
+      <div id="log" role="log" aria-live="polite"></div>
+      <form id="form">
+        <textarea id="input" rows="1" placeholder="Ask, or check something from an earlier day" aria-label="Message"></textarea>
+        <button class="send" id="send" type="submit">Send</button>
+      </form>
+      <p class="hint">Enter to send. New chat saves this one. A repeat question can skip the web.</p>
+    </div>
+    </div>
+    <script>
+      const log = document.getElementById("log");
+      const chats = document.getElementById("chats");
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const send = document.getElementById("send");
+      const sub = document.getElementById("sub");
+      let threadId = localStorage.getItem("minimi-thread") || "";
+      let busy = false;
+
+      function uid() {
+        if (crypto.randomUUID) return crypto.randomUUID();
+        return "thread-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      }
+
+      function renderMarkdown(src) {
+        const escaped = src.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const inline = escaped
+          .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>");
+        const lines = inline.split("\n");
+        let html = "";
+        let inList = false;
+        const close = () => { if (inList) { html += "</ul>"; inList = false; } };
+        for (const line of lines) {
+          const item = line.match(/^\s*[-*]\s+(.*)$/);
+          if (item) {
+            if (!inList) { html += "<ul>"; inList = true; }
+            html += `<li>${item[1]}</li>`;
+            continue;
+          }
+          close();
+          if (!line.trim()) continue;
+          html += `<p>${line}</p>`;
+        }
+        close();
+        return html;
+      }
+
+      function sourcesHtml(sources) {
+        if (!sources?.length) return "";
+        return `<div class="chips">${sources
+          .map((s) => `<a class="src" href="${attr(s.url)}" target="_blank" rel="noopener noreferrer">${escapeText(s.title || s.url)}</a>`)
+          .join("")}</div>`;
+      }
+
+      function escapeText(value) {
+        return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+      function attr(value) {
+        return escapeText(value).replace(/"/g, "&quot;");
+      }
+
+      function addUser(text) {
+        const el = document.createElement("div");
+        el.className = "msg user";
+        el.innerHTML = `<div class="who">You</div><div class="bubble user"></div>`;
+        el.querySelector(".bubble").textContent = text;
+        log.appendChild(el);
+        stick();
+      }
+
+      function addAssistant() {
+        const el = document.createElement("div");
+        el.className = "msg assistant";
+        el.innerHTML = `<div class="who">Minimi</div><div class="status"></div><div class="chips recalled"></div><div class="bubble assistant"></div><div class="chips sources"></div>`;
+        log.appendChild(el);
+        stick();
+        return el;
+      }
+
+      function showEmpty() {
+        log.innerHTML = `<p class="empty">Ask something, then come back later and ask whether it is still true. Minimi keeps the day, the products, and the figures.</p>`;
+      }
+
+      function stick() {
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function paintThread(thread) {
+        log.innerHTML = "";
+        if (!thread.messages?.length) { showEmpty(); return; }
+        for (const message of thread.messages) {
+          if (message.role === "user") addUser(message.content);
+          else {
+            const el = addAssistant();
+            el.querySelector(".bubble").innerHTML = renderMarkdown(message.content);
+            if (message.recalled?.length) {
+              el.querySelector(".recalled").innerHTML = `<span class="chip">From ${escapeText(message.recalled.join(" · "))}</span>`;
+            }
+            el.querySelector(".sources").innerHTML = sourcesHtml(message.sources);
+          }
+        }
+        stick();
+      }
+
+      async function ensureThread() {
+        if (!threadId) threadId = uid();
+        localStorage.setItem("minimi-thread", threadId);
+        const res = await fetch("/api/thread/" + encodeURIComponent(threadId));
+        if (!res.ok) throw new Error("Could not load the thread");
+        const thread = await res.json();
+        threadId = thread.id;
+        localStorage.setItem("minimi-thread", threadId);
+        paintThread(thread);
+      }
+
+      async function sendMessage(text) {
+        if (busy) return;
+        busy = true;
+        send.disabled = true;
+        if (log.querySelector(".empty")) log.innerHTML = "";
+        addUser(text);
+        const card = addAssistant();
+        const status = card.querySelector(".status");
+        const bubble = card.querySelector(".bubble");
+        const recalled = card.querySelector(".recalled");
+        const sources = card.querySelector(".sources");
+        let answer = "";
+        status.textContent = "Starting";
+        try {
+          let res;
+          try {
+            res = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ threadId, message: text }),
+            });
+          } catch {
+            res = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ threadId, message: text }),
+            });
+          }
+          if (!res.ok || !res.body) {
+            const err = await res.json().catch(() => ({ error: "Request failed" }));
+            throw new Error(err.error || "Request failed");
+          }
+          const reader = res.body.getReader();
+          const dec = new TextDecoder();
+          let buf = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            const blocks = buf.split("\n\n");
+            buf = blocks.pop() || "";
+            for (const block of blocks) {
+              let event = "message";
+              let data = "";
+              for (const line of block.split("\n")) {
+                if (line.startsWith("event:")) event = line.slice(6).trim();
+                else if (line.startsWith("data:")) data += line.slice(5).trim();
+              }
+              if (!data) continue;
+              const json = JSON.parse(data);
+              if (event === "status") status.textContent = json.text;
+              if (event === "token") {
+                status.textContent = "";
+                answer += json.text;
+                bubble.innerHTML = renderMarkdown(answer);
+                stick();
+              }
+              if (event === "meta") {
+                if (json.recalled?.length) recalled.innerHTML = `<span class="chip">From ${escapeText(json.recalled.join(" · "))}</span>`;
+                if (json.sources?.length) sources.innerHTML = sourcesHtml(json.sources);
+              }
+              if (event === "error") throw new Error(json.text || "Something went wrong");
+            }
+          }
+          if (!answer) throw new Error("No reply");
+        } catch (err) {
+          status.textContent = "";
+          const raw = err && err.message ? err.message : "Something went wrong";
+          const text = raw === "Failed to fetch"
+            ? "Couldn't reach the server. Refresh this page. npm run dev needs to be running."
+            : raw;
+          bubble.innerHTML = `<p class="err">${escapeText(text)}</p>`;
+        } finally {
+          busy = false;
+          send.disabled = false;
+          input.focus();
+          loadChats();
+        }
+      }
+
+      function when(iso) {
+        const date = new Date(iso);
+        const today = new Date();
+        if (date.toDateString() === today.toDateString()) {
+          return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        }
+        return date.toLocaleDateString([], { day: "numeric", month: "short" });
+      }
+
+      async function loadChats() {
+        const res = await fetch("/api/threads");
+        if (!res.ok) return;
+        const threads = await res.json();
+        chats.innerHTML = "";
+        for (const thread of threads) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "chat" + (thread.id === threadId ? " active" : "");
+          button.innerHTML = `<strong></strong><small></small>`;
+          button.querySelector("strong").textContent = thread.title;
+          button.querySelector("small").textContent = when(thread.updatedAt);
+          button.addEventListener("click", () => openThread(thread.id));
+          chats.appendChild(button);
+        }
+      }
+
+      async function openThread(id) {
+        if (busy) return;
+        threadId = id;
+        localStorage.setItem("minimi-thread", threadId);
+        const res = await fetch("/api/thread/" + encodeURIComponent(id));
+        if (!res.ok) return;
+        paintThread(await res.json());
+        loadChats();
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        input.style.height = "auto";
+        sendMessage(text);
+      });
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+
+      input.addEventListener("input", () => {
+        input.style.height = "auto";
+        input.style.height = Math.min(input.scrollHeight, 160) + "px";
+      });
+
+      document.getElementById("new").addEventListener("click", () => {
+        threadId = uid();
+        localStorage.setItem("minimi-thread", threadId);
+        showEmpty();
+        loadChats();
+        input.focus();
+      });
+
+      fetch("/api/health").then((res) => res.json()).then((health) => {
+        sub.textContent = `Remembers the day. Checks the web. Times in ${health.timezone}.`;
+        if (!health.hasKey) sub.textContent = "Add DEEPSEEK_API_KEY to .env and restart.";
+      }).catch(() => {});
+
+      ensureThread().then(loadChats).catch(() => showEmpty());
+    </script>
+  </body>
+</html>

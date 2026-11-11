@@ -1,17 +1,23 @@
 {
-  "name": "scout",
+  "name": "minimi",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "pnpm --parallel --filter @scout/api --filter @scout/web dev",
-    "dev:api": "pnpm --filter @scout/api dev",
-    "dev:web": "pnpm --filter @scout/web dev",
-    "build": "pnpm --filter @scout/shared build && pnpm --filter @scout/api build && pnpm --filter @scout/web build",
-    "start": "pnpm --filter @scout/api start",
-    "typecheck": "pnpm -r typecheck"
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "test": "tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@9.15.0"
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "typescript": "^5.7.3"
+  }
 }
